@@ -3,7 +3,7 @@ var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHei
 var width = window.innerWidth;
 var height = window.innerHeight;
 
-const ratio = width/height;
+const ratio = width / height;
 
 const cwidth = 1 * ratio;
 const cheight = 1;
@@ -26,7 +26,7 @@ const renderTarget = new THREE.WebGLRenderTarget(width, height);
 
 scene.background = new THREE.Color('red');
 
-var geometry = new THREE.BoxGeometry(0.1,0.1,0.1);
+var geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
 var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 var cube = new THREE.Mesh(geometry, material);
 cube.position.x = 0;
@@ -48,19 +48,19 @@ const renderMaterial = new THREE.MeshBasicMaterial({
 
 
 var rectgeometry = new THREE.PlaneGeometry();
-var rectangle = new THREE.Mesh(rectgeometry, redmaterial);
+var rectangle = new THREE.Mesh(rectgeometry, renderMaterial);
 
 //scene.add(rectangle);
-
+//renderScene.add(rectangle);
 
 
 var renderrectgeometry = new THREE.PlaneGeometry(ratio, 1);
 const renderRect = new THREE.Mesh(renderrectgeometry, renderMaterial);
 renderScene.add(renderRect);
 
-camera.position.z = 1;
+camera.position.z = 0;
 camera.position.x = 0;
-camera.position.y = 0.1;
+camera.position.y = 0;
 
 function toScreenSpace(pos) {
     var widthHalf = width / 2;
@@ -75,39 +75,67 @@ function toScreenSpace(pos) {
     return pos;
 }
 
+let a = camera.position.x;
+let b = camera.position.y;
+let c = camera.position.z;
+
 var animate = function () {
 
+    // let a = camera.position.x;
+    // let b = camera.position.y;
+    // let c = camera.position.z;
+
+    camera.projectionMatrix
+        .set(1 - c, 0, 0, 0,
+            0, 1 - c, 0, 0,
+            a, b, 1, 1,
+            -a, -b, -c, 1);
+
+    // let tl = new THREE.Vector3(-1,1,0);
+    // tl.unproject(camera);
+    // let tr = new THREE.Vector3(1,1,0);
+    // tr.unproject(camera);
+    // let bl = new THREE.Vector3(-1,-1,0);
+    // bl.unproject(camera);
+    // let br = new THREE.Vector3(1,-1,0);
+    // br.unproject(camera);
 
 
-    var pos = rectangle.position.clone();
 
-    rectWidthHalf = 1 / 2;
-    rectHeightHalf = 1 / 2;
-    //rectWidthHalf *= 2;
 
-    var tl = pos.clone();
-    tl.x -= rectWidthHalf;
-    tl.y += rectHeightHalf;
-    tlS = toScreenSpace(tl);
 
-    var tr = pos.clone();;
-    tr.x += rectWidthHalf;
-    tr.y += rectHeightHalf;
-    trS = toScreenSpace(tr);
+    // var pos = rectangle.position.clone();
+    // console.log({ pos })
+    // pos.unproject(camera);
+    // console.log({ pos })
 
-    var bl = pos.clone();;
-    bl.x -= rectWidthHalf;
-    bl.y -= rectHeightHalf;
-    blS = toScreenSpace(bl);
+    // rectWidthHalf = 1 / 2 * ratio;
+    // rectHeightHalf = 1 / 2;
+    // //rectWidthHalf *= 2;
 
-    var br = pos.clone();;
-    br.x += rectWidthHalf;
-    br.y -= rectHeightHalf;
-    brS = toScreenSpace(br);
+    // var tl = pos.clone();
+    // tl.x -= rectWidthHalf;
+    // tl.y += rectHeightHalf;
+    // tlS = toScreenSpace(tl);
 
-   
+    // var tr = pos.clone();
+    // tr.x += rectWidthHalf;
+    // tr.y += rectHeightHalf;
+    // trS = toScreenSpace(tr);
 
-    var uvAttribute = renderrectgeometry.faceVertexUvs[0];
+    // var bl = pos.clone();
+    // bl.x -= rectWidthHalf;
+    // bl.y -= rectHeightHalf;
+    // blS = toScreenSpace(bl);
+
+    // var br = pos.clone();
+    // br.x += rectWidthHalf;
+    // br.y -= rectHeightHalf;
+    // brS = toScreenSpace(br);
+
+
+
+    // var uvAttribute = renderrectgeometry.faceVertexUvs[0];
 
     // var face1 = uvAttribute[0];
     // face1[0].x = blS.x;
@@ -130,24 +158,25 @@ var animate = function () {
     // face2[2].x = brS.x;
     // face2[2].y = brS.y;
 
-    
-
-    
-
     renderrectgeometry.uvsNeedUpdate = true;
- 
+
 
     camera.lookAt(0, 0, 0);
-    renderCamera.lookAt(0, 0, 0)
+    renderCamera.lookAt(0, 0, 0);
 
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(scene, camera);
 
-    renderer.setRenderTarget(null);
-    renderer.render(renderScene, renderCamera);
+    // renderer.setRenderTarget(renderTarget);
+    // renderer.render(scene, camera);
+
+    // //renderer.setRenderTarget(null);
+
+    // //renderer.render(renderScene, camera);
 
     // renderer.setRenderTarget(null);
-    // renderer.render(scene, camera);
+    // renderer.render(renderScene, renderCamera);
+
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
 
     requestAnimationFrame(animate);
 };
@@ -168,25 +197,34 @@ function setFOV(fov) {
 
 function setupKeyControls() {
     document.onkeydown = function (e) {
+        console.log(e.keyCode)
         switch (e.keyCode) {
             case 37:
-                camera.position.x -= 0.03
+                a -= 0.03
                 console.log(e.keyCode)
                 break;
             case 39:
                 // camera.eyeSep = -0.03;
                 // camera.update(camera.cameraL);
-                camera.position.x += 0.03
+                a += 0.03
                 console.log(e.keyCode)
                 break;
-            case 38:
-                
+            case 87:
+                //up
+                c -= 0.03;
                 //camera.cameraL.position.set(0, 0, camera.cameraL.position.z + 0.1)
                 // camera.update(camera.cameraL);
-                
+
+                break;
+            case 83:
+                //up
+                c += 0.03;
+                //camera.cameraL.position.set(0, 0, camera.cameraL.position.z + 0.1)
+                // camera.update(camera.cameraL);
+
                 break;
             default:
-             
+
                 break;
             // case 40:
             // cube.rotation.z += 0.1;

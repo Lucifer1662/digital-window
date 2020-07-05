@@ -34,7 +34,10 @@ void main() {
   float b = u_camPos.y;
   float a = u_camPos.x;
   float c = u_camPos.z;
-  gl_Position = vec4((position.x - a)*(1.0-c)/(zToDivideBy+c) + a,(position.y - b)*(1.0-c)/(zToDivideBy+c) + b, position.z/zToDivideBy,1);
+  gl_Position = 
+  vec4((position.x - a)*(1.0-c)/(zToDivideBy+c) + a,
+  (position.y - b)*(1.0-c)/(zToDivideBy+c) + b, 
+  position.z/zToDivideBy,1);
 
   // Pass the color to the fragment shader.
   v_color = a_color;
