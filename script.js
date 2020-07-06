@@ -98,6 +98,7 @@ function processVideo() {
         let xRatio = videoWidth / size.width;
         let yRatio = videoHeight / size.height;
         let face = faces[0];
+        
 
         x = face.x + face.width / 2.0;
         y = face.y + face.height / 2.0;
@@ -115,14 +116,16 @@ function processVideo() {
 
         x = -x;
         y = -y;
-        z = 1 / face.width * 60
+        z = 1 / face.width * 25
         x /= z;
         y /= z;
 
 
-        factor = 1;
+        factor = 0.08;//0.2
         x *= factor;
         y *= factor;
+
+        y+= 0.17;//0.7
 
         //60cm, 50pixels
         //30cm, 75 pixel width
@@ -130,6 +133,7 @@ function processVideo() {
 
         //console.log({width: face.width, z})
         updatePosition({ x, y, z });
+
 
 
     }
@@ -176,4 +180,6 @@ function opencvIsReady() {
     console.log('OpenCV.js is ready');
     initUI();
     startCamera();
+    setupKeyControls();
+    animate();
 }
