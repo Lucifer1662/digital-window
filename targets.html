@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)https://www.auduno.com/headtrackr/examples/targets.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>targets</title>
+		
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+		</style>
+		<script type="text/javascript" async="" src="./targets_files/ga.js.download"></script><script>
+			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
+			if (window.location.protocol == "file:") {
+				alert("You seem to be running this example directly from a file. Note that these examples only work when served from a server or localhost due to canvas cross-domain restrictions.");
+			} else if (window.location.hostname !== "localhost" && window.location.protocol !== "https:"){
+				window.location.protocol = "https";
+			}
+		</script>
+		<script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-32642923-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+	</head>
+	<body cz-shortcut-listen="true">
+
+		<script src="./targets_files/Three.js.download"></script>
+		<script src="./targets_files/Stats.js.download"></script>
+		<script src="./targets_files/Detector.js.download"></script>
+		
+		<script src="./targets_files/headtrackr.js.download"></script>
+		
+		<canvas id="compare" width="320" height="240" style="display:none"></canvas>
+		<video id="vid" autoplay="" loop="" style="position: absolute; top: 50px; z-index: 100001; display: block;"></video>
+			
+		<script>
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			
+			var videoInput = document.getElementById('vid');
+			var canvasInput = document.getElementById('compare');
+			
+			// 3d model setup
+			
+			var container, stats;
+			var camera, scene, renderer;
+			var plane;
+			
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				scene = new THREE.Scene();
+				scene.fog = new THREE.Fog( 0x000000, 1, 5000 );
+		
+				camera = new THREE.PerspectiveCamera( 23, window.innerWidth / window.innerHeight, 1, 100000 );
+				camera.position.z = 6000;
+				scene.add( camera );
+				
+				// Planes
+				
+				//top wall
+				plane1 = new THREE.Mesh( new THREE.PlaneGeometry( 500, 3000, 5, 15 ), new THREE.MeshBasicMaterial( { color: 0xcccccc, wireframe : true } ) );
+				plane1.rotation.x = Math.PI/2;
+				plane1.position.y = 250;
+				plane1.position.z = 50-1500;
+				scene.add( plane1 );
+				
+				//left wall
+				plane2 = new THREE.Mesh( new THREE.PlaneGeometry( 3000, 500, 15, 5 ), new THREE.MeshBasicMaterial( { color: 0xcccccc, wireframe : true } ) );
+				plane2.rotation.y = Math.PI/2;
+				plane2.position.x = -250;
+				plane2.position.z = 50-1500;
+				scene.add( plane2 );
+				
+				//right wall
+				plane3 = new THREE.Mesh( new THREE.PlaneGeometry( 3000, 500, 15, 5 ), new THREE.MeshBasicMaterial( { color: 0xcccccc, wireframe : true	} ) );
+				plane3.rotation.y = -Math.PI/2;
+				plane3.position.x = 250;
+				plane3.position.z = 50-1500;
+				scene.add( plane3 );
+				
+				//bottom wall
+				plane4 = new THREE.Mesh( new THREE.PlaneGeometry( 500, 3000, 5, 15 ), new THREE.MeshBasicMaterial( { color: 0xcccccc, wireframe : true	} ) );
+				plane4.rotation.x = -Math.PI/2;
+				plane4.position.y = -250;
+				plane4.position.z = 50-1500;
+				scene.add( plane4 );
+				
+				// Create sprites with lines
+				
+				var placeTarget = function(x,y,z) {
+						
+						// Cylinder
+						var cylinder = new THREE.Mesh( new THREE.CylinderGeometry(30,30,1,20,1,false), new THREE.MeshBasicMaterial( { color : 0xeeeeee} ) );
+						cylinder.position.x = x;
+						cylinder.rotation.x = Math.PI/2;
+						cylinder.position.y = y;
+						cylinder.position.z = z;
+						scene.add( cylinder );
+						
+						var geometry = new THREE.Geometry();
+						geometry.vertices.push( new THREE.Vector3( 0, 0, -80000 ) );
+						geometry.vertices.push( new THREE.Vector3( 0, 0, z ) );
+						var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xeeeeee } ) );
+						line.position.x = x;
+						line.position.y = y;
+						scene.add( line );
+				}
+								
+				placeTarget(-150,-150,-550);
+				placeTarget(0,-150,-200);
+				placeTarget(100,0,500);
+				placeTarget(-150,100,0);
+				placeTarget(150,-100,-1050);
+				placeTarget(50,0,1100);
+				placeTarget(-50,-50,600);
+				placeTarget(0,150,-2100);
+				placeTarget(-130,0,-700);
+				
+				renderer = new THREE.WebGLRenderer({ clearAlpha: 1 });
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.appendChild( renderer.domElement );
+				
+			}
+			
+			var stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			document.body.appendChild( stats.domElement );
+			
+			function animate() {
+
+				renderer.render(scene, camera);
+				stats.update();
+
+				requestAnimationFrame( animate );
+
+			}
+			
+			init();
+			animate();
+			
+			// video styling
+			videoInput.style.position = 'absolute';
+			videoInput.style.top = '50px';
+			videoInput.style.zIndex = '100001';
+			videoInput.style.display = 'block';
+			
+			// set up camera controller
+			headtrackr.controllers.three.realisticAbsoluteCameraControl(camera, 27, [0,0,50], new THREE.Vector3(0,0,0), {damping : 0.5});
+			
+			// Face detection setup
+			var htracker = new headtrackr.Tracker({altVideo : {ogv : "./media/capture5.ogv", mp4 : "./media/capture5.mp4"}});
+			htracker.init(videoInput, canvasInput);
+			htracker.start();
+			
+			document.addEventListener('headtrackingEvent', function(event) {
+				scene.fog = new THREE.Fog( 0x000000, 1+(event.z*27), 3000+(event.z*27) );
+			}, false);
+		</script><div style="cursor: pointer; width: 80px; opacity: 0.9; z-index: 10001; position: absolute; top: 0px;"><div style="text-align: left; line-height: 1.2em; background-color: rgb(8, 8, 24); padding: 0px 0px 3px 3px;"><div style="font-family: Helvetica, Arial, sans-serif; font-size: 9px; color: rgb(0, 255, 255); font-weight: bold;">58 FPS (51-60)</div><div style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 255);"><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 30px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 13.2px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 14.7px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12.9px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12.3px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12.9px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12.6px; float: left; background-color: rgb(16, 16, 48);"></span><span style="width: 1px; height: 12.6px; float: left; background-color: rgb(16, 16, 48);"></span></div></div><div style="text-align: left; line-height: 1.2em; background-color: rgb(8, 24, 8); padding: 0px 0px 3px 3px; display: none;"><div style="font-family: Helvetica, Arial, sans-serif; font-size: 9px; color: rgb(0, 255, 0); font-weight: bold;">18 MS (5-85)</div><div style="position: relative; width: 74px; height: 30px; background-color: rgb(0, 255, 0);"><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.15px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.9px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.75px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.75px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 25.05px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.15px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.9px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.15px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.9px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.45px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.6px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 26.7px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 25.05px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 28.65px; float: left; background-color: rgb(16, 48, 16);"></span><span style="width: 1px; height: 27.3px; float: left; background-color: rgb(16, 48, 16);"></span></div></div></div><div><canvas width="1920" height="942" style="width: 1536px; height: 754px;"></canvas></div><div id="headtrackerMessageDiv" style="left: 20%; right: 20%; top: 30%; font-size: 90px; color: rgb(119, 119, 119); position: absolute; font-family: Helvetica, Arial, sans-serif; z-index: 100002;"><div style="margin-left: auto; margin-right: auto; width: 100%; text-align: center; color: rgb(255, 255, 255); background-color: rgb(68, 68, 68); opacity: 0.5;"><p id="headtrackerMessage"></p></div></div>
+	
+
+</body></html>
