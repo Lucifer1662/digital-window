@@ -1,4 +1,5 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
 <body>
   <div id="container">
     <canvas class="center-block" id="canvasOutput" width=320 height=240></canvas>
@@ -10,68 +11,341 @@
   <div class="invisible">
     <video id="video" class="hidden">Your browser does not support the video tag.</video>
   </div>
-</div>
+  </div>
 </body>
 <script>
   var Module = {
-     wasmBinaryFile: 'opencv_js.wasm',
-    preRun: [function() {
+    wasmBinaryFile: 'opencv_js.wasm',
+    preRun: [function () {
       Module.FS_createPreloadedFile('/', 'haarcascade_frontalface_default.xml', 'haarcascade_frontalface_default.xml', true, false);
     }],
-    _main: function() {opencvIsReady();}
+    _main: function () { opencvIsReady(); }
   };
 </script>
-<script async src="opencv.js"></script>
-<script src="script.js"></script>
+<!-- <script async src="opencv.js"></script>
+<script src="script.js"></script> -->
 <script src="three.js"></script>
-<script src="render.js"></script>
+<script src="OBJLoader.js"></script>
+<script src="MTLLoader.js"></script>
+<script src="GLTFLoader.js"></script>
+<!-- <script src="render.js"></script> -->
 
-<script  id="vertex-shader-3d" type="x-shader/x-vertex">
-  attribute vec4 a_position;
-  attribute vec4 a_color;
-  
-  uniform mat4 u_matrix;
-  uniform float u_fudgeFactor;
-  uniform vec3 u_camPos;
-  
-  varying vec4 v_color;
-  
-  void main() {
-    // Multiply the position by the matrix.
-    vec4 position = u_matrix * a_position;
-  
-    // Adjust the z to divide by
-    float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
-  
-    // Divide x and y by z.
-    // gl_Position = vec4(position.xyz, zToDivideBy);
-    float b = u_camPos.y;
-    float a = u_camPos.x;
-    float c = u_camPos.z;
-    gl_Position = vec4((position.x - a)*(1.0-c)/(zToDivideBy+c) + a,(position.y - b)*(1.0-c)/(zToDivideBy+c) + b, position.z/zToDivideBy,1);
-  
-    // Pass the color to the fragment shader.
-    v_color = a_color;
+
+
+<script src="headtrackr.js"></script>
+
+<canvas id="compare" width="320" height="240" style="display:none"></canvas>
+<video id="vid" autoplay="" loop="" style="position: absolute; top: 50px; z-index: 100001; display: block;"></video>
+
+<!-- <canvas id="inputCanvas" width="320" height="240"></canvas>
+<video id="inputVideo" autoplay loop></video> -->
+
+
+<script type="text/javascript">
+  // var videoInput = document.getElementById('inputVideo');
+  // var canvasInput = document.getElementById('inputCanvas');
+
+  // var htracker = new headtrackr.Tracker();
+  // htracker.init(videoInput, canvasInput);
+  // htracker.start();
+
+  // document.addEventListener("headtrackingEvent", function (e) {
+  //   var {x,y,z} = e;
+  //   //console.log(e);
+  //   updatePosition({x:x/100,y:y/100,z:(z)/100});
+  //   //console.log({x:x/100,y:y/100,z:z/100})
+
+  // });
+  var videoInput = document.getElementById('vid');
+  var canvasInput = document.getElementById('compare');
+
+  // 3d model setup
+
+  var container, stats;
+  var camera, scene, renderer;
+  var bgScene = new THREE.Scene();
+  let bgMesh;
+  var plane;
+  let position = new THREE.Vector3();
+
+  function init() {
+
+    container = document.createElement('div');
+    document.body.appendChild(container);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000, 1, 5000);
+
+    camera = new THREE.PerspectiveCamera(23, window.innerWidth / window.innerHeight, 1, 100000);
+    camera.position.z = 6000;
+    scene.add(camera);
+
+
+
+    // Instantiate a loader
+    var loader = new THREE.GLTFLoader();
+
+    // // Optional: Provide a DRACOLoader instance to decode compressed mesh data
+    // var dracoLoader = new DRACOLoader();
+    // dracoLoader.setDecoderPath('/examples/js/libs/draco/');
+    // loader.setDRACOLoader(dracoLoader);
+
+    // Load a glTF resource
+    loader.load(
+      // resource URL
+      'world/testworld.glb',
+      // called when the resource is loaded
+      function (gltf) {
+        var world = gltf.scene.children[0];
+        let s = 10;
+        world.scale.x = s;
+        world.scale.y = s;
+        world.scale.z = s;
+        scene.add(world);
+
+        // gltf.animations; // Array<THREE.AnimationClip>
+        // gltf.scene; // THREE.Group
+        // gltf.scenes; // Array<THREE.Group>
+        // gltf.cameras; // Array<THREE.Camera>
+        // gltf.asset; // Object
+        // console.log({gltf})
+
+      },
+      // called while loading is progressing
+      function (xhr) {
+
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+
+      },
+      // called when loading has errors
+      function (error) {
+
+        console.log('An error happened');
+
+      }
+    );
+
+    // // Planes
+
+    // //top wall
+    // plane1 = new THREE.Mesh(new THREE.PlaneGeometry(500 * 2, 3000, 5, 15), new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true }));
+    // plane1.rotation.x = Math.PI / 2;
+    // plane1.position.y = 250;
+    // plane1.position.z = 50 - 1500;
+    // scene.add(plane1);
+
+    // //left wall
+    // plane2 = new THREE.Mesh(new THREE.PlaneGeometry(3000, 500, 15, 5), new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true }));
+    // plane2.rotation.y = Math.PI / 2;
+    // plane2.position.x = -250 * 2;
+    // plane2.position.z = 50 - 1500;
+    // scene.add(plane2);
+
+    // //right wall
+    // plane3 = new THREE.Mesh(new THREE.PlaneGeometry(3000, 500, 15, 5), new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true }));
+    // plane3.rotation.y = -Math.PI / 2;
+    // plane3.position.x = 250 * 2;
+    // plane3.position.z = 50 - 1500;
+    // scene.add(plane3);
+
+    // //bottom wall
+    // plane4 = new THREE.Mesh(new THREE.PlaneGeometry(500 * 2, 3000, 5, 15), new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true }));
+    // plane4.rotation.x = -Math.PI / 2;
+    // plane4.position.y = -250;
+    // plane4.position.z = 50 - 1500;
+    // scene.add(plane4);
+
+    // Create sprites with lines
+
+    var placeTarget = function (x, y, z) {
+
+      // Cylinder
+      var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(30, 30, 1, 20, 1, false), new THREE.MeshBasicMaterial({ color: 0xeeeeee }));
+      cylinder.position.x = x;
+      cylinder.rotation.x = Math.PI / 2;
+      cylinder.position.y = y;
+      cylinder.position.z = z;
+      scene.add(cylinder);
+
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(new THREE.Vector3(0, 0, -80000));
+      geometry.vertices.push(new THREE.Vector3(0, 0, z));
+      var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xeeeeee }));
+      line.position.x = x;
+      line.position.y = y;
+      scene.add(line);
+    }
+
+    var placeTargetBox = function (x, y, z) {
+
+      // Cylinder
+      var cylinder = new THREE.Mesh(new THREE.BoxGeometry(30, 30, 30), new THREE.MeshStandardMaterial({ color: 0x00ff00 }));
+      cylinder.position.x = x;
+      cylinder.rotation.x = Math.PI / 2;
+      cylinder.position.y = y;
+      cylinder.position.z = z;
+      scene.add(cylinder);
+
+    }
+
+
+
+    placeTarget(-150, -150, -550);
+    placeTargetBox(0, -220, -100);
+    placeTarget(0, -150, -200);
+    placeTarget(100, 0, 500);
+    placeTarget(-150, 100, 0);
+    placeTarget(150, -100, -1050);
+    placeTarget(50, 0, 1100);
+    placeTarget(-50, -50, 600);
+    placeTarget(0, 150, -2100);
+    placeTarget(-130, 0, -700);
+
+
+    // var light = new THREE.PointLight(0xfffffff, 1, 1000);
+    // light.position.set(0, 200, 0);
+    // light.castShadow = true;
+    // scene.add(light);
+
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.y = 200;
+    directionalLight.position.z = 100;
+    // directionalLight.position.x = 0;
+    // directionalLight.position.z = 0;
+    // directionalLight.target = new THREE.Vector3(0,0,0);
+    scene.add(directionalLight);
+
+
+
+
+    // const loader = new THREE.TextureLoader();
+    // const texture = loader.load(
+    //   'tears_of_steel_bridge_2k.jpg',
+    // );
+    // texture.magFilter = THREE.LinearFilter;
+    // texture.minFilter = THREE.LinearFilter;
+
+    // const shader = THREE.ShaderLib.equirect;
+    // const material = new THREE.ShaderMaterial({
+    //   fragmentShader: shader.fragmentShader,
+    //   vertexShader: shader.vertexShader,
+    //   uniforms: shader.uniforms,
+    //   depthWrite: false,
+    //   side: THREE.BackSide,
+    // });
+    // material.uniforms.tEquirect.value = texture;
+    // const plane = new THREE.BoxBufferGeometry(2, 2, 2);
+    // bgMesh = new THREE.Mesh(plane, material);
+    // bgScene.add(bgMesh);
+
+
+    // const loader = new THREE.CubeTextureLoader();
+    // const texture = loader.load([
+    //   'pos-x.jpg',
+    //   'neg-x.jpg',
+    //   'pos-y.jpg',
+    //   'neg-y.jpg',
+    //   'pos-z.jpg',
+    //   'neg-z.jpg',
+    // ]);
+    // scene.background = texture;
+
+    //var textureLoader = new THREE.CubeTextureLoader();
+    // var textureLoader = new THREE.TextureLoader();
+
+    // var texture0 = textureLoader.load('pos-x.jpg');
+    // var texture1 = textureLoader.load('neg-x.jpg');
+    // var texture2 = textureLoader.load('pos-y.jpg');
+    // var texture3 = textureLoader.load('neg-y.jpg');
+    // var texture4 = textureLoader.load('pos-z.jpg');
+    // var texture5 = textureLoader.load('neg-z.jpg');
+
+    // var materials = [
+    //   new THREE.MeshBasicMaterial({ map: texture0 }),
+    //   new THREE.MeshBasicMaterial({ map: texture1 }),
+    //   new THREE.MeshBasicMaterial({ map: texture2 }),
+    //   new THREE.MeshBasicMaterial({ map: texture3 }),
+    //   new THREE.MeshBasicMaterial({ map: texture4 }),
+    //   new THREE.MeshBasicMaterial({ map: texture5 })
+    // ];
+    // var faceMaterial = new THREE.MeshFaceMaterial(materials);
+
+    // var geometry = new THREE.BoxGeometry(20, 20, 20);
+    // var boxMesh = new THREE.Mesh(geometry, faceMaterial);
+    // let s = -40;
+    // boxMesh.scale.x = s;
+    // boxMesh.scale.y = -s;
+    // boxMesh.scale.z = s;
+    // scene.add(boxMesh);
+    // var mtlLoader = new THREE.MTLLoader();
+    // mtlLoader.load("mountains.mtl", function (materials) {
+
+    //   materials.preload();
+
+
+    //   console.log({materials})
+    //   var loader = new THREE.OBJLoader();
+    //   loader.setMaterials(materials);
+    //   loader.load(
+
+    //     'mountains.obj',
+
+    //     function (object) {
+
+    //       object.position.z = -200;
+    //       object.position.y = 100;
+    //       object.position.x = 100;
+    //       object.scale.x = 10;
+    //       object.scale.y = 10;
+    //       object.scale.z = 10;
+    //       scene.add(object);
+    //     });
+    // });
+
+    renderer = new THREE.WebGLRenderer({ clearAlpha: 1 });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    container.appendChild(renderer.domElement);
+
   }
-  </script>
-  <!-- fragment shader -->
-  <script  id="fragment-shader-3d" type="x-shader/x-fragment">
-  precision mediump float;
-  
-  // Passed in from the vertex shader.
-  varying vec4 v_color;
-  
-  void main() {
-     gl_FragColor = v_color;
+
+  // var stats = new Stats();
+  // stats.domElement.style.position = 'absolute';
+  // stats.domElement.style.top = '0px';
+  // document.body.appendChild( stats.domElement );
+
+  function animate() {
+
+    // bgMesh.position.copy(camera.position);
+    // renderer.render(bgScene, camera);
+    cam = camera.clone();
+    // cam.position.y += -100;
+    renderer.render(scene, cam);
+    //stats.update();
+
+    requestAnimationFrame(animate);
+
   }
-  </script><!--
-  for most samples webgl-utils only provides shader compiling/linking and
-  canvas resizing because why clutter the examples with code that's the same in every sample.
-  See https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
-  and https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
-  for webgl-utils, m3, m4, and webgl-lessons-ui.
-  -->
-  <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
-  <script src="https://webglfundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
-  <script src="webGl.js"></script>
-  
+
+  init();
+  animate();
+
+  // video styling
+  videoInput.style.position = 'absolute';
+  videoInput.style.top = '50px';
+  videoInput.style.zIndex = '100001';
+  videoInput.style.display = 'block';
+
+  // set up camera controller
+  headtrackr.controllers.three.realisticAbsoluteCameraControl(camera, 27, [0, 0, 0], new THREE.Vector3(0, 0, 0), { damping: 0.5, screenHeight: 16.5 });
+
+  // Face detection setup
+  var htracker = new headtrackr.Tracker({ altVideo: { ogv: "./media/capture5.ogv", mp4: "./media/capture5.mp4" } });
+  htracker.init(videoInput, canvasInput);
+  htracker.start();
+
+  document.addEventListener('headtrackingEvent', function (event) {
+    scene.fog = new THREE.Fog(0x000000, 1 + (event.z * 27), 3000 + (event.z * 27));
+  }, false);
+
+</script>
